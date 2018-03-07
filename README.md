@@ -1,8 +1,13 @@
-# Socket.IO Chat
+# Socks
+
+Still a work in progress but I'm happy w/ [socks.glitch.me](https://socks.glitch.me/)  In the course of making it I learned about how to use linear interpolation to smooth out movement between server updates. At some point I plan to re-implement my coin class & enemy class, now that I know #NodeJS
+
+![](https://cdn.glitch.com/bf5c4617-e473-46a4-a3d1-de12c6946e06%2Fsocksa.gif?1520388086746)
+
+This project is based on... [socketio-chat.glitch.me](http://socketio-chat.glitch.me)
 A simple [chat demo](https://github.com/socketio/socket.io/tree/master/examples/chat) using the  [socket.io](http://socket.io/) real-time bidirectional event library for Node.js.
 
 Multiple users can join a chat room by each entering a unique username
 when the website loads. Users can type chat messages to the room, and a notification is sent to all users when another user joins or leaves.
-
 
 ![](https://cdn.glitch.com/d5323c5b-d1fd-4d39-97ac-c5d8b4cfd3f8%2FsocketIOChatGIF.gif)
