@@ -1,4 +1,4 @@
-var framesPerSecond = 20;
+var framesPerSecond = 30;
 var username = "foo";
 var platArray = [];
 var heroDictionary = {};
@@ -8,13 +8,14 @@ let score=0;
 let img1;
 let img2;
 let brickpic;
-let gridHeight;
-let brickWidth;
+
 var myHero;
-let gravity =.2;
+const gravity =.2;
 let coinSineCount=0;
-let width = 1000;
-let height = 600;
+const width = 1000;
+const height = 600;
+const gridHeight = height / 40;
+const brickWidth = width / 40;
 
 function preload(){
   brickpic = loadImage('https://cdn.glitch.com/e3090096-8c2e-4fe1-b543-08d827467d32%2Fbrick.jpg?1512020822398');
@@ -27,8 +28,7 @@ function setup(){
   //var myCanvas = createCanvas(windowWidth-20,windowHeight-20);
   var myCanvas = createCanvas(1000,600);
   myCanvas.parent("canvasContainer");
-  gridHeight = int(height / 40);
-  brickWidth = int(width / 40);
+  
   //makeNewPlatforms();
   myHero = new Hero(0,0,10,username);
   //heroArray.push(new Hero(0,0,10));
@@ -362,14 +362,14 @@ $(function() {
   
 
 
-  function addParticipantsMessage (data) {
+  function addParticipantsMessage (num_users) {
     var message = '';
-    if (data.numUsers === 1) {
+    if (num_users === 1) {
       message += "there is 1 participant";
       // Tell the server you want a new game
       //socket.emit('new game', platArray);
     } else {
-      message += "there are " + data.numUsers + " participants";
+      message += "there are " + num_users + " participants";
     }
     //console.log(message);
     $textAlert.text(message);
@@ -526,7 +526,7 @@ $(function() {
     //   prepend: true
     // });
     //console.log(data);
-    addParticipantsMessage(data);
+    addParticipantsMessage(data.numUsers);
     
   });
 
@@ -540,16 +540,47 @@ $(function() {
     
   });
   
+  function interpolate(ax,ay, bx,by, frac) // points A and B, frac between 0 and 1
+  {
+    var nx = ax+(bx-ax)*frac;
+    var ny = ay+(by-ay)*frac;
+    return {x:nx, y:ny};
+  }
+  function distance(ax,ay,bx,by){
+    var distx = bx - ax;
+    var disty = by - ay;
+    return Math.sqrt( distx*distx + disty*disty );
+  }
+  
   // Whenever the server emits 'new message', update the chat body
   // This is broadcast and therefore will only be messages from other users
   socket.on('new message', function (data) {
     if (!(data.username in heroDictionary)){ // true if "key" doesn't exist in heroDictionary
       heroDictionary[data.username] = new Hero(0,0,10,data.username);
     }
-    heroDictionary[data.username].x = data.message.x;
-    heroDictionary[data.username].y = data.message.y;
-    heroDictionary[data.username].velocityy = data.message.velocityy;
-    heroDictionary[data.username].imgcounter = data.message.imgcounter;
+    var changeInDistance = distance(heroDictionary[data.username].x,heroDictionary[data.username].y,data.message.x,data.message.y);
+    if(changeInDistance > 100){
+      heroDictionary[data.username].x = data.message.x;
+      heroDictionary[data.username].y = data.message.y;
+      heroDictionary[data.username].velocityy = data.message.velocityy;
+      heroDictionary[data.username].imgcounter = data.message.imgcounter;
+    } else {
+      var numInterpolatePoints = Math.ceil(changeInDistance/5);
+      var oldx =heroDictionary[data.username].x;
+      var oldy =heroDictionary[data.username].y;
+      for(var i=0;i<numInterpolatePoints;i++){
+        (function (i) {
+          setTimeout(function () {
+            var newpoint=interpolate(oldx,oldy,data.message.x,data.message.y,(i+1)/numInterpolatePoints);
+            heroDictionary[data.username].x = newpoint.x;
+            heroDictionary[data.username].y = newpoint.y;
+          }, 1000/framesPerSecond/numInterpolatePoints*i);
+        })(i);
+        
+      }
+      heroDictionary[data.username].velocityy = data.message.velocityy;
+      heroDictionary[data.username].imgcounter = data.message.imgcounter;
+    }
     //console.log(data);
     //addChatMessage(data);
   });
@@ -569,9 +600,11 @@ $(function() {
 
   // Whenever the server emits 'user left', log it in the chat body
   socket.on('user left', function (data) {
-    //console.log(data.username + ' left');
-    addParticipantsMessage(data.username + ' left');
+    console.log(data.username + ' left');
+    console.log(data.numUsers + ' left');
+    $textAlert.text(data.username + ' left');
     delete heroDictionary[data.username];
+    setTimeout(()=>addParticipantsMessage(data.numUsers),3000);
     // removeChatTyping(data);
   });
 
